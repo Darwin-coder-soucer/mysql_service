@@ -1,0 +1,38 @@
+name: CI with MySQL Service
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Esperar a que MySQL esté disponible
+        run: |
+          until mysql -h 127.0.0.1 -P 3306 -u root -ppassword -e "SELECT 1" ; do
+            >&2 echo "MySQL no está disponible, esperando..."
+            sleep 1
+          done
+      
+      - name: Ejecutar tests
+        run: echo "Ejecutando tests contra MySQL..."
